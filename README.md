@@ -67,13 +67,14 @@ flowchart LR
   S1 --> S2 --> S3 --> S4
 ```
 
-**系统工作流（企业资料库入库）：** 企业职级标准 / 业务文件 / SOP 上传后，由 BullMQ 队列异步解析、分块、向量化，状态通过 Realtime 推回前端。
+**系统工作流（AI 任务异步链路）：** AI 任务耗时长，所以走异步链路：前端发起请求后，接口只做校验并写一条 `ai_task`（pending）、把任务推入 BullMQ 队列，随即返回 `task_id`；后台 Worker（Mastra，并发 2）取出任务、按类型路由到对应 Workflow，失败按次数重试、超限写入 failed 与错误日志；结果落库后通过 Supabase Realtime 推回前端渲染。
 
-![企业资料库系统流程](docs/images/kb-system-flow.png)
+![简历解析与验证方向：系统流程](docs/images/system/resume-analysis-async.png)
 
 > 图中向量存储按设计稿写作 pgvector；V1 实际实现为 embedding 存 jsonb、应用层计算余弦相似度（切块量级为百级），数据量变大后再迁移 pgvector。
 
-> 业务主流程（用户 / 系统两条泳道，覆盖项目创建、多轮面试到候选人总结）较大，见 [docs/business-flow.md](docs/business-flow.md)。
+> 其余系统流程（登录注册、新建项目、企业资料库入库、项目资料库与权限、面试官变更与候选人转移、批量对比与删除）见 [docs/system-flows.md](docs/system-flows.md)；业务主流程见 [docs/business-flow.md](docs/business-flow.md)。
+
 
 ## 06 技术架构
 | 层 | 方案 |
@@ -93,7 +94,7 @@ flowchart LR
 - 接受度风险：面试官是否愿意多花时间；企业是否愿意上传内部资料
 
 ## 文档
-[PRD](docs/PRD.md) · [业务主流程](docs/business-flow.md) · [架构](docs/architecture.md) · [AI 工作流](docs/workflow.md) · [风险与复盘](docs/risks-and-retrospective.md)
+[PRD](docs/PRD.md) · [业务主流程](docs/business-flow.md) · [系统流程](docs/system-flows.md) · [架构](docs/architecture.md) · [AI 工作流](docs/workflow.md) · [风险与复盘](docs/risks-and-retrospective.md)
 
 ## 说明
 本仓库为项目展示，不含密钥、真实候选人数据与完整 Prompt 原文。代码仅供展示，未经许可不得复制商用。
