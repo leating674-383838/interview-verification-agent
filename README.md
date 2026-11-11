@@ -31,7 +31,49 @@
 
 **人机分工：** Agent 负责整理、关联、分析与辅助验证，最终判断始终由人做。
 
-## 05 技术架构
+## 05 AI 推理流程与系统工作流
+**AI 推理流程：** 14 次 LLM Call 分四个阶段衔接，关键节点由用户选择与确认，AI 不替代人做最终判断。
+
+```mermaid
+flowchart LR
+  subgraph S1["① 简历分析 → 验证方向"]
+    direction TB
+    a1["上传简历 + JD"] --> a2["Call 1<br/>拆分经历 · 提取声明 · 生成检索 Query"]
+    a2 --> a3["Call 2<br/>识别疑点 · 生成验证方向"]
+    a3 --> a4(["用户选择验证方向"])
+    a4 --> a5["Call 3-4<br/>结合 RAG 生成验证问题 JSON"]
+    a5 --> a6(["确认存档"])
+  end
+  subgraph S2["② 面试分析 → 疑点标注"]
+    direction TB
+    b1["上传逐字稿 + 观察记录"] --> b2["Call 5-6<br/>原文关联 · 本轮验证分析 · 疑点标注"]
+    b2 --> b3(["用户选择验证方向"])
+    b3 --> b4["Call 7-8<br/>结合 RAG 输出下一轮验证问题"]
+  end
+  subgraph S3["③ 对话微调 → 单轮总结"]
+    direction TB
+    c1["流式对话微调问题"] --> c2["Call 9-10<br/>解析对话历史 · 改写问题"]
+    c2 --> c3["填写面试反馈"] --> c4["Call 11-12<br/>模板 + RAG 生成单轮总结表"]
+    c4 --> c5{"用户确认?"}
+    c5 -- 否 --> c3
+    c5 -- 是 --> c6(["存入项目资料库"])
+  end
+  subgraph S4["④ 多轮 → 候选人总结"]
+    direction TB
+    d1["选择各轮状态"] --> d2["Call 13<br/>跨轮结构化聚合 · 生成 Query"]
+    d2 --> d3["Call 14<br/>聚合结果 + 总结模板 + RAG(SOP)"]
+    d3 --> d4(["存入项目资料库"])
+  end
+  S1 --> S2 --> S3 --> S4
+```
+
+**系统工作流（企业资料库入库）：** 企业职级标准 / 业务文件 / SOP 上传后，由 BullMQ 队列异步解析、分块、向量化，状态通过 Realtime 推回前端。
+
+![企业资料库系统流程](docs/images/kb-system-flow.png)
+
+> 业务主流程（用户 / 系统两条泳道，覆盖项目创建、多轮面试到候选人总结）较大，见 [docs/business-flow.md](docs/business-flow.md)。
+
+## 06 技术架构
 | 层 | 方案 |
 |---|---|
 | 应用 | Next.js (App Router) + React，Supabase Auth 与角色权限 |
@@ -43,13 +85,13 @@
 
 详见 [docs/architecture.md](docs/architecture.md)、[docs/workflow.md](docs/workflow.md)，代码节选见 [src/README.md](src/README.md)。
 
-## 06 假设与风险（如实标注）
+## 07 假设与风险（如实标注）
 - 待验证：AI 能否由简历生成有效验证任务；HM 是否愿意在面试前使用；多轮承接效果
 - 技术风险：多轮上下文累积后判断是否稳定；企业文件质量参差对 RAG 的影响；评测结果的合规风险
 - 接受度风险：面试官是否愿意多花时间；企业是否愿意上传内部资料
 
 ## 文档
-[PRD](docs/PRD.md) · [架构](docs/architecture.md) · [AI 工作流](docs/workflow.md) · [风险与复盘](docs/risks-and-retrospective.md)
+[PRD](docs/PRD.md) · [业务主流程](docs/business-flow.md) · [架构](docs/architecture.md) · [AI 工作流](docs/workflow.md) · [风险与复盘](docs/risks-and-retrospective.md)
 
 ## 说明
 本仓库为项目展示，不含密钥、真实候选人数据与完整 Prompt 原文。代码仅供展示，未经许可不得复制商用。

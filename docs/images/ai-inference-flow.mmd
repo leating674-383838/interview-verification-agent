@@ -1,0 +1,30 @@
+flowchart LR
+  subgraph S1["① 简历分析 → 验证方向"]
+    direction TB
+    a1["上传简历 + JD"] --> a2["Call 1<br/>拆分经历 · 提取声明 · 生成检索 Query"]
+    a2 --> a3["Call 2<br/>识别疑点 · 生成验证方向"]
+    a3 --> a4(["用户选择验证方向"])
+    a4 --> a5["Call 3-4<br/>结合 RAG 生成验证问题 JSON"]
+    a5 --> a6(["确认存档"])
+  end
+  subgraph S2["② 面试分析 → 疑点标注"]
+    direction TB
+    b1["上传逐字稿 + 观察记录"] --> b2["Call 5-6<br/>原文关联 · 本轮验证分析 · 疑点标注"]
+    b2 --> b3(["用户选择验证方向"])
+    b3 --> b4["Call 7-8<br/>结合 RAG 输出下一轮验证问题"]
+  end
+  subgraph S3["③ 对话微调 → 单轮总结"]
+    direction TB
+    c1["流式对话微调问题"] --> c2["Call 9-10<br/>解析对话历史 · 改写问题"]
+    c2 --> c3["填写面试反馈"] --> c4["Call 11-12<br/>模板 + RAG 生成单轮总结表"]
+    c4 --> c5{"用户确认?"}
+    c5 -- 否 --> c3
+    c5 -- 是 --> c6(["存入项目资料库"])
+  end
+  subgraph S4["④ 多轮 → 候选人总结"]
+    direction TB
+    d1["选择各轮状态"] --> d2["Call 13<br/>跨轮结构化聚合 · 生成 Query"]
+    d2 --> d3["Call 14<br/>聚合结果 + 总结模板 + RAG(SOP)"]
+    d3 --> d4(["存入项目资料库"])
+  end
+  S1 --> S2 --> S3 --> S4
