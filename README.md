@@ -71,6 +71,8 @@ flowchart LR
 
 ![企业资料库系统流程](docs/images/kb-system-flow.png)
 
+> 图中向量存储按设计稿写作 pgvector；V1 实际实现为 embedding 存 jsonb、应用层计算余弦相似度（切块量级为百级），数据量变大后再迁移 pgvector。
+
 > 业务主流程（用户 / 系统两条泳道，覆盖项目创建、多轮面试到候选人总结）较大，见 [docs/business-flow.md](docs/business-flow.md)。
 
 ## 06 技术架构
